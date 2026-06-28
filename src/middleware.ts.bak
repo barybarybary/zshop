@@ -1,0 +1,43 @@
+// ============================================================
+// 中间件 - 路由保护 & 国际化
+// ============================================================
+
+import { auth } from "@/lib/auth";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+// 需要登录才能访问的路由
+const protectedRoutes = ["/account", "/checkout"];
+// 管理员路由
+const adminRoutes = ["/admin"];
+
+export default auth((req) => {
+  const { pathname } = req.nextUrl;
+  const isLoggedIn = !!req.auth?.user;
+  const userRole = (req.auth?.user as any)?.role;
+
+  // 管理员路由保护
+  if (adminRoutes.some((route) => pathname.startsWith(route))) {
+    if (!isLoggedIn) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    if (userRole !== "ADMIN") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  }
+
+  // 需要登录的路由
+  if (protectedRoutes.some((route) => pathname.startsWith(route))) {
+    if (!isLoggedIn) {
+      return NextResponse.redirect(
+        new URL(`/login?redirect=${encodeURIComponent(pathname)}`, req.url)
+      );
+    }
+  }
+
+  return NextResponse.next();
+});
+
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)"],
+};
