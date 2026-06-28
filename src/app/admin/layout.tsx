@@ -3,7 +3,7 @@
 // ============================================================
 
 import Link from "next/link";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { isStaff, ROLE_MENUS, type Role } from "@/lib/roles";
 import {
@@ -38,7 +38,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const session = await getSession();
   const role = (session?.user as any)?.role as Role | undefined;
 
   if (!session?.user || !isStaff(role)) {

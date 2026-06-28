@@ -1,89 +1,58 @@
 // ============================================================
-// NextAuth.js 认证配置
+// 简易 JWT 认证（替代 NextAuth，兼容 Netlify）
 // ============================================================
 
-import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
-import Credentials from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import { SignJWT, jwtVerify } from "jose";
+import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt" },
-  trustHost: true,
-  pages: {
-    signIn: "/login",
-    newUser: "/register",
-  },
-  providers: [
-    // Google OAuth - 一键登录
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID!,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
-      allowDangerousEmailAccountLinking: true,
-    }),
-    // 邮箱+密码登录
-    Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+const SECRET = new TextEncoder().encode(
+  process.env.AUTH_SECRET || "zshop-default-secret-change-me"
+);
+
+const COOKIE_NAME = "zshop_token";
+
+export async function createToken(user: { id: string; email: string; name?: string | null; role: string }) {
+  return new SignJWT({ id: user.id, email: user.email, name: user.name, role: user.role })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("7d")
+    .sign(SECRET);
+}
+
+export async function getSession() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get(COOKIE_NAME)?.value;
+    if (!token) return null;
+
+    const { payload } = await jwtVerify(token, SECRET);
+    return {
+      user: {
+        id: payload.id as string,
+        email: payload.email as string,
+        name: (payload.name as string) || null,
+        role: (payload.role as string) || "USER",
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password required");
-        }
+    };
+  } catch {
+    return null;
+  }
+}
 
-        const email = credentials.email as string;
-        const password = credentials.password as string;
+export async function setSessionCookie(user: { id: string; email: string; name?: string | null; role: string }) {
+  const token = await createToken(user);
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60,
+    path: "/",
+  });
+}
 
-        const user = await prisma.user.findUnique({
-          where: { email },
-        });
-
-        if (!user || !user.password) {
-          throw new Error("Invalid email or password");
-        }
-
-        const isValid = await bcrypt.compare(password, user.password);
-        if (!isValid) {
-          throw new Error("Invalid email or password");
-        }
-
-        // 生成推荐码 (首次登录)
-        if (!user.referralCode) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { referralCode: user.id.slice(0, 8) },
-          });
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role,
-        };
-      },
-    }),
-  ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = (user as any).role || "USER";
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-      }
-      return session;
-    },
-  },
-});
+export async function clearSession() {
+  const cookieStore = await cookies();
+  cookieStore.delete(COOKIE_NAME);
+}

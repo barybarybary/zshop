@@ -2,14 +2,14 @@
 // Admin 专属 - 用户管理
 // ============================================================
 
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default async function UserManagement() {
-  const session = await auth();
+  const session = await getSession();
   const role = (session?.user as any)?.role;
   if (role !== "ADMIN") redirect("/admin");
 

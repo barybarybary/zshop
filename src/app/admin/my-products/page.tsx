@@ -2,14 +2,14 @@
 // Seller 专属 - 我的商品
 // ============================================================
 
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default async function MyProducts() {
-  const session = await auth();
+  const session = await getSession();
   const role = (session?.user as any)?.role;
   if (!role || !["ADMIN", "SELLER"].includes(role)) redirect("/admin");
 

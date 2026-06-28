@@ -5,7 +5,7 @@
 // ============================================================
 
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // 获取拼团列表
@@ -46,7 +46,7 @@ export async function GET(req: Request) {
 // 发起拼团
 export async function POST(req: Request) {
   try {
-    const session = await auth();
+    const session = await getSession();
     if (!session?.user) {
       return NextResponse.json({ error: "Please sign in" }, { status: 401 });
     }

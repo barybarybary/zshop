@@ -4,13 +4,13 @@
 // ============================================================
 
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isStaff } from "@/lib/roles";
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
+    const session = await getSession();
     const role = (session?.user as any)?.role;
     if (!session?.user || !isStaff(role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });

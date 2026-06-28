@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,7 @@ import Link from "next/link";
 
 export default function SellerApply() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { session } = useAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     storeName: "",

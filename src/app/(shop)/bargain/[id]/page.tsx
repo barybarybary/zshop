@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ import { Zap, ArrowDown, Share2, Loader2, ShoppingCart } from "lucide-react";
 export default function BargainPage() {
   const params = useParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { session } = useAuth();
   const [bargain, setBargain] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [helping, setHelping] = useState(false);
