@@ -1,6 +1,5 @@
 # Render Blueprint - 一键部署
 services:
-  # Web 服务
   - type: web
     name: zshop
     runtime: node
@@ -24,7 +23,6 @@ services:
       - key: NODE_VERSION
         value: 20.x
 
-  # PostgreSQL 数据库
-  - type: postgres
-    name: zshop-db
+databases:
+  - name: zshop-db
     plan: free
